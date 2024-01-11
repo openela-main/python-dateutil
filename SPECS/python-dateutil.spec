@@ -2,13 +2,21 @@
 
 Name:           python-%{modname}
 Version:        2.8.1
-Release:        6%{?dist}
+Release:        7%{?dist}
 Epoch:          1
 Summary:        Powerful extensions to the standard datetime module
 
 License:        BSD
 URL:            https://github.com/dateutil/dateutil
 Source:         %{pypi_source}
+
+# Mitigate CVE-2007-4559 (tarfile directory traversal).
+# `dateutil.zoneinfo.rebuild` handles "pure data" tarballs,
+# here we disable tar features that are potentially unsafe.
+# Submitted upstream, but rejected because they're removing this
+# code entirely.
+# BZ: https://bugzilla.redhat.com/show_bug.cgi?id=2203905
+Patch1:         https://github.com/dateutil/dateutil/pull/1295.patch
 
 # Disable tests to avoid pulling in test dependencies on RHEL9
 # Specify --with tests to run the tests e.g. on EPEL
@@ -47,7 +55,7 @@ Summary: API documentation for python-dateutil
 This package contains %{summary}.
 
 %prep
-%autosetup
+%autosetup -p1
 iconv --from=ISO-8859-1 --to=UTF-8 NEWS > NEWS.new
 mv NEWS.new NEWS
 
@@ -74,6 +82,10 @@ make -C docs html
 %doc docs/_build/html
 
 %changelog
+* Wed Jul 12 2023 Petr Viktorin <pviktori@redhat.com> - 1:2.8.1-7
+- Mitigate CVE-2007-4559 (tarfile directory traversal).
+  Resolves: rhbz#2203905
+
 * Tue Aug 10 2021 Mohan Boddu <mboddu@redhat.com> - 1:2.8.1-6
 - Rebuilt for IMA sigs, glibc 2.34, aarch64 flags
   Related: rhbz#1991688
